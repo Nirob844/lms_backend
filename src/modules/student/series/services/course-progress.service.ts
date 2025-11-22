@@ -31,8 +31,8 @@ export class CourseProgressService {
             const completionPercentage = Math.round((completedLessons / totalLessons) * 100);
             const isCourseCompleted = completionPercentage === 100;
 
-             // If course is completed, unlock end video and start next course
-             if (isCourseCompleted) {
+            // If course is completed, start next course
+            if (isCourseCompleted) {
                 await this.handleCourseCompletion(userId, courseId, seriesId);
             }
 
@@ -345,32 +345,7 @@ export class CourseProgressService {
     }
 
     private async handleCourseCompletion(userId: string, courseId: string, seriesId: string) {
-        this.logger.log(`Course ${courseId} is completed! Unlocking end video and starting next course...`);
-
-        // Check if course has end video and unlock it
-        const course = await this.prisma.course.findFirst({
-            where: {
-                id: courseId,
-                deleted_at: null,
-            },
-            select: { id: true, end_video_url: true },
-        });
-
-        if (course?.end_video_url) {
-            await this.prisma.courseProgress.updateMany({
-                where: {
-                    user_id: userId,
-                    course_id: courseId,
-                    series_id: seriesId,
-                    deleted_at: null,
-                },
-                data: {
-                    end_video_unlocked: true,
-                    updated_at: new Date(),
-                } as any,
-            });
-            this.logger.log(`End video unlocked for completed course ${courseId}`);
-        }
+        this.logger.log(`Course ${courseId} is completed! Starting next course...`);
 
         // Start next course (this would be called from the main service)
         // await this.startNextCourse(userId, courseId, seriesId);

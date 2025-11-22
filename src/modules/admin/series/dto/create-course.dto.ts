@@ -9,7 +9,6 @@ export class CreateCourseDto {
 
     @IsString()
     @IsNotEmpty()
-    @MaxLength(200)
     title!: string;
 
 
@@ -19,13 +18,5 @@ export class CreateCourseDto {
     @IsInt()
     @Min(0)
     price?: number;
-
-    @IsOptional()
-    @IsString()
-    intro_video_url?: string;
-
-    @IsOptional()
-    @IsString()
-    end_video_url?: string;
 
 }

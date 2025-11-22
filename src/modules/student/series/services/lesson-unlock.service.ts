@@ -54,7 +54,7 @@ export class LessonUnlockService {
     }
 
     /**
-     * Ensure first course's intro video or first lesson is unlocked for a user
+     * Ensure first course's first lesson is unlocked for a user
      */
     async unlockFirstLessonForUser(userId: string, seriesId: string): Promise<void> {
         try {
@@ -73,13 +73,8 @@ export class LessonUnlockService {
 
             const firstCourse = courses[0];
 
-            // First, try to unlock intro video if it exists
-            if (firstCourse.intro_video_url) {
-                await this.unlockIntroVideoForCourse(userId, firstCourse.id, seriesId);
-            } else {
-                // If no intro video, unlock the first lesson file
-                await this.unlockFirstLessonInCourse(userId, firstCourse.id, seriesId);
-            }
+            // Unlock the first lesson file
+            await this.unlockFirstLessonInCourse(userId, firstCourse.id, seriesId);
 
             this.logger.log(`Initialized course progress for ${courses.length} courses in series ${seriesId}`);
         } catch (error) {
@@ -87,25 +82,6 @@ export class LessonUnlockService {
         }
     }
 
-    /**
-     * Unlock first lesson after intro video completion
-     */
-    async unlockFirstLessonAfterIntroCompletion(userId: string, courseId: string, seriesId: string): Promise<boolean> {
-        const firstLesson = await this.prisma.lessonFile.findFirst({
-            where: {
-                course_id: courseId,
-                deleted_at: null,
-            },
-            select: { id: true },
-            orderBy: { created_at: 'asc' },
-        });
-
-        if (!firstLesson) {
-            return false;
-        }
-
-        return await this.unlockLessonForUser(userId, firstLesson.id, courseId, seriesId);
-    }
 
     /**
      * Start the next course automatically when current course is completed
@@ -149,8 +125,6 @@ export class LessonUnlockService {
             orderBy: { created_at: 'asc' },
             select: {
                 id: true,
-                intro_video_url: true,
-                end_video_url: true
             },
         });
     }
@@ -194,27 +168,8 @@ export class LessonUnlockService {
         }
     }
 
-    private async unlockIntroVideoForCourse(userId: string, courseId: string, seriesId: string) {
-        this.logger.log(`Unlocking intro video for first course ${courseId} for user ${userId}`);
-
-        await this.prisma.courseProgress.updateMany({
-            where: {
-                user_id: userId,
-                course_id: courseId,
-                series_id: seriesId,
-                deleted_at: null,
-            },
-            data: {
-                intro_video_unlocked: true,
-                updated_at: new Date(),
-            } as any,
-        });
-
-        this.logger.log(`Intro video unlocked for first course ${courseId} for user ${userId}`);
-    }
-
     private async unlockFirstLessonInCourse(userId: string, courseId: string, seriesId: string) {
-        this.logger.log(`No intro video found, unlocking first lesson for first course ${courseId} for user ${userId}`);
+        this.logger.log(`Unlocking first lesson for first course ${courseId} for user ${userId}`);
 
         const firstLesson = await this.prisma.lessonFile.findFirst({
             where: {
@@ -286,43 +241,24 @@ export class LessonUnlockService {
                     created_at: { gt: currentCourse.created_at },
                     deleted_at: null,
                 },
-                select: { id: true, intro_video_url: true },
+                select: { id: true },
                 orderBy: { created_at: 'asc' },
             });
 
             if (nextCourse) {
-                // Check if next course has intro video
-                if (nextCourse.intro_video_url) {
-                    // Unlock intro video for next course
-                    await this.prisma.courseProgress.updateMany({
-                        where: {
-                            user_id: userId,
-                            course_id: nextCourse.id,
-                            series_id: currentCourse.series_id,
-                            deleted_at: null,
-                        },
-                        data: {
-                            intro_video_unlocked: true,
-                            updated_at: new Date(),
-                        } as any,
-                    });
+                // Find first lesson of next course (first by creation time)
+                const firstLessonOfNextCourse = await this.prisma.lessonFile.findFirst({
+                    where: {
+                        course_id: nextCourse.id,
+                        deleted_at: null,
+                    },
+                    select: { id: true },
+                    orderBy: { created_at: 'asc' },
+                });
 
-                    this.logger.log(`Unlocked intro video for next course ${nextCourse.id} for user ${userId}`);
-                } else {
-                    // Find first lesson of next course (first by creation time)
-                    const firstLessonOfNextCourse = await this.prisma.lessonFile.findFirst({
-                        where: {
-                            course_id: nextCourse.id,
-                            deleted_at: null,
-                        },
-                        select: { id: true },
-                        orderBy: { created_at: 'asc' },
-                    });
-
-                    if (firstLessonOfNextCourse) {
-                        await this.unlockLessonForUser(userId, firstLessonOfNextCourse.id, nextCourse.id, currentCourse.series_id);
-                        this.logger.log(`Unlocked first lesson ${firstLessonOfNextCourse.id} of next course ${nextCourse.id} for user ${userId}`);
-                    }
+                if (firstLessonOfNextCourse) {
+                    await this.unlockLessonForUser(userId, firstLessonOfNextCourse.id, nextCourse.id, currentCourse.series_id);
+                    this.logger.log(`Unlocked first lesson ${firstLessonOfNextCourse.id} of next course ${nextCourse.id} for user ${userId}`);
                 }
             }
         }
@@ -400,48 +336,21 @@ export class LessonUnlockService {
     }
 
     private async unlockContentForNextCourse(userId: string, courseId: string, seriesId: string) {
-        // Check if next course has intro video
-        const nextCourseWithIntro = await this.prisma.course.findFirst({
+        // Unlock first lesson of next course
+        const firstLesson = await this.prisma.lessonFile.findFirst({
             where: {
-                id: courseId,
+                course_id: courseId,
                 deleted_at: null,
             },
-            select: { id: true, title: true, intro_video_url: true },
+            select: { id: true, title: true },
+            orderBy: { created_at: 'asc' },
         });
 
-        if (nextCourseWithIntro?.intro_video_url) {
-            // Unlock intro video for next course
-            await this.prisma.courseProgress.updateMany({
-                where: {
-                    user_id: userId,
-                    course_id: courseId,
-                    series_id: seriesId,
-                    deleted_at: null,
-                },
-                data: {
-                    intro_video_unlocked: true,
-                    updated_at: new Date(),
-                } as any,
-            });
-
-            this.logger.log(`Unlocked intro video for next course: ${nextCourseWithIntro.title}`);
+        if (firstLesson) {
+            await this.unlockLessonForUser(userId, firstLesson.id, courseId, seriesId);
+            this.logger.log(`Unlocked first lesson of next course: ${firstLesson.title}`);
         } else {
-            // Unlock first lesson of next course
-            const firstLesson = await this.prisma.lessonFile.findFirst({
-                where: {
-                    course_id: courseId,
-                    deleted_at: null,
-                },
-                select: { id: true, title: true },
-                orderBy: { created_at: 'asc' },
-            });
-
-            if (firstLesson) {
-                await this.unlockLessonForUser(userId, firstLesson.id, courseId, seriesId);
-                this.logger.log(`Unlocked first lesson of next course: ${firstLesson.title}`);
-            } else {
-                this.logger.warn(`No first lesson found for next course ${nextCourseWithIntro?.title}`);
-            }
+            this.logger.warn(`No first lesson found for next course ${courseId}`);
         }
     }
 }

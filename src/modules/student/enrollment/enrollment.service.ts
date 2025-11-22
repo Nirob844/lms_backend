@@ -3,7 +3,7 @@ import { CreateEnrollmentDto } from './dto/create-enrollment.dto';
 import { PrismaService } from '../../../prisma/prisma.service';
 import { StripePayment } from '../../../common/lib/Payment/stripe/StripePayment';
 import { TransactionRepository } from '../../../common/repository/transaction/transaction.repository';
-import { SeriesService } from '../series/series.service.refactored';
+import { SeriesService } from '../series/series.service';
 import { EnrollType } from '@prisma/client';
 
 
