@@ -1,6 +1,10 @@
 import { PrismaClient } from '@prisma/client';
 import { SeriesService } from 'src/modules/admin/series/series.service';
-import { SeriesService as StudentSeriesService } from 'src/modules/student/series/series.service.refactored';
+import { PrismaService } from 'src/prisma/prisma.service';
+import { LessonUnlockService } from 'src/modules/student/series/services/lesson-unlock.service';
+import { CourseProgressService } from 'src/modules/student/series/services/course-progress.service';
+import { LessonProgressService } from 'src/modules/student/series/services/lesson-progress.service';
+import { JwtService } from '@nestjs/jwt';
 
 const prisma = new PrismaClient();
 
@@ -181,10 +185,10 @@ export class TransactionRepository {
     });
 
 
-    // Import and use SeriesService properly
-    const { SeriesService } = await import('../../../modules/student/series/series.service');
-    const seriesService = new SeriesService(prisma as any);
-    await seriesService.unlockFirstLessonForUser(updatedEnrollment.user_id, updatedEnrollment.series_id);
+    // Unlock first lesson for user using LessonUnlockService directly
+    const prismaService = new PrismaService();
+    const lessonUnlockService = new LessonUnlockService(prismaService);
+    await lessonUnlockService.unlockFirstLessonForUser(updatedEnrollment.user_id, updatedEnrollment.series_id);
 
     // Update user type to student
     await prisma.user.update({

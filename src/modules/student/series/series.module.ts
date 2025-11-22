@@ -1,6 +1,6 @@
 import { Module } from '@nestjs/common';
 import { JwtModule } from '@nestjs/jwt';
-import { SeriesService } from './series.service.refactored';
+import { SeriesService } from './series.service';
 import { SeriesController } from './series.controller';
 import { PrismaModule } from 'src/prisma/prisma.module';
 import { SeriesServicesModule } from './series-services.module';

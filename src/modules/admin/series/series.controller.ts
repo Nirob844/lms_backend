@@ -46,26 +46,10 @@ export class SeriesController {
 
   @Post('course')
   @HttpCode(HttpStatus.CREATED)
-  @UseInterceptors(
-    FileFieldsInterceptor([
-      { name: 'introVideo', maxCount: 1 },
-      { name: 'endVideo', maxCount: 1 },
-    ], multerConfig)
-  )
   async createCourse(
-    @Body() createCourseDto: CreateCourseDto,
-    @UploadedFiles() files: {
-      introVideo?: Express.Multer.File[];
-      endVideo?: Express.Multer.File[];
-    }
+    @Body() createCourseDto: CreateCourseDto
   ) {
-    const introVideo = files.introVideo?.[0];
-    const endVideo = files.endVideo?.[0];
-
-    return this.seriesService.createCourse(createCourseDto, {
-      introVideo,
-      endVideo,
-    });
+    return this.seriesService.createCourse(createCourseDto);
   }
 
   @Post('lesson-file')
@@ -262,23 +246,11 @@ export class SeriesController {
 
   @Patch('course/:courseId')
   @HttpCode(HttpStatus.OK)
-  @UseInterceptors(
-    FileFieldsInterceptor([
-      { name: 'introVideo', maxCount: 1 },
-      { name: 'endVideo', maxCount: 1 },
-    ], multerConfig)
-  )
   async updateCourse(
     @Param('courseId') courseId: string,
-    @Body() updateData: UpdateCourseDto,
-    @UploadedFiles() files: {
-      introVideo?: Express.Multer.File[];
-      endVideo?: Express.Multer.File[];
-    }
+    @Body() updateData: UpdateCourseDto
   ) {
-    const introVideo = files.introVideo?.[0];
-    const endVideo = files.endVideo?.[0];
-    return this.seriesService.updateCourse(courseId, updateData, introVideo, endVideo);
+    return this.seriesService.updateCourse(courseId, updateData);
   }
 
   @Patch('lesson/:lessonId')

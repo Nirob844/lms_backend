@@ -1,13 +1,12 @@
 import { Controller, Get, Post, Body, Param, Query, UseGuards, Req, Res, Headers, Options } from '@nestjs/common';
-import { SeriesService } from './series.service.refactored';
+import { SeriesService } from './series.service';
 import { JwtAuthGuard } from 'src/modules/auth/guards/jwt-auth.guard';
 import { SeriesResponse } from './interfaces/series-response.interface';
 import { ApiBearerAuth, ApiTags, ApiOperation } from '@nestjs/swagger';
 import { RolesGuard } from 'src/common/guard/role/roles.guard';
 import { Roles } from 'src/common/guard/role/roles.decorator';
 import { Role } from 'src/common/guard/role/role.enum';
-import { VideoProgressService } from './services/video-progress.service';
-import { VideoProgressResponse } from './types/video-progress.types';
+
 
 @ApiTags('student-series')
 @ApiBearerAuth()
@@ -257,65 +256,6 @@ export class SeriesController {
 
   // ==================== VIDEO PROGRESS ENDPOINTS ====================
 
-  @Post('courses/:courseId/intro-video/progress')
-  @ApiOperation({ summary: 'Update intro video progress, unlock first lesson at 90%, and auto-complete at 100%' })
-  async updateIntroVideoProgress(
-    @Req() req: any,
-    @Param('courseId') courseId: string,
-    @Body() progressData: {
-      time_spent?: number;
-      last_position?: number;
-      completion_percentage?: number;
-    },
-  ): Promise<SeriesResponse<any>> {
-    const userId = req.user.userId;
-    return this.seriesService.updateIntroVideoProgress(userId, courseId, progressData);
-  }
-
-  @Post('courses/:courseId/end-video/progress')
-  @ApiOperation({ summary: 'Update end video progress and auto-complete if 100% watched' })
-  async updateEndVideoProgress(
-    @Req() req: any,
-    @Param('courseId') courseId: string,
-    @Body() progressData: {
-      time_spent?: number;
-      last_position?: number;
-      completion_percentage?: number;
-    },
-  ): Promise<SeriesResponse<any>> {
-    const userId = req.user.userId;
-    return this.seriesService.updateEndVideoProgress(userId, courseId, progressData);
-  }
-
-  @Post('courses/:courseId/intro-video/complete')
-  @ApiOperation({ summary: 'Mark intro video as completed and unlock first lesson' })
-  async markIntroVideoAsCompleted(
-    @Req() req: any,
-    @Param('courseId') courseId: string,
-    @Body() completionData?: {
-      time_spent?: number;
-      last_position?: number;
-      completion_percentage?: number;
-    },
-  ): Promise<SeriesResponse<any>> {
-    const userId = req.user.userId;
-    return this.seriesService.markIntroVideoAsCompleted(userId, courseId, completionData);
-  }
-
-  @Post('courses/:courseId/end-video/complete')
-  @ApiOperation({ summary: 'Mark end video as completed and unlock next lesson' })
-  async markEndVideoAsCompleted(
-    @Req() req: any,
-    @Param('courseId') courseId: string,
-    @Body() completionData?: {
-      time_spent?: number;
-      last_position?: number;
-      completion_percentage?: number;
-    },
-  ): Promise<SeriesResponse<any>> {
-    const userId = req.user.userId;
-    return this.seriesService.markEndVideoAsCompleted(userId, courseId, completionData);
-  }
 
   // ==================== LESSON UNLOCK ENDPOINTS ====================
 
