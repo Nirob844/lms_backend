@@ -46,7 +46,7 @@ async function bootstrap() {
       'https://anna-eagles-academy.vercel.app',
       'https://thewhiteeaglesacademy.com',
       'http://thewhiteeaglesacademy.com',
-      'https://www.frontend.thewhiteeaglesacademy.com'
+      'https://reported-management-easter-substance.trycloudflare.com'
     ],
     methods: ['GET', 'POST', 'PUT', 'PATCH', 'DELETE', 'OPTIONS', 'HEAD'],
     allowedHeaders: [
